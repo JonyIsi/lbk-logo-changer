@@ -119,7 +119,7 @@ export default function Home() {
           )}
           
           {convertedImage && (
-            <div>
+            <div className="relative group">
               <h2 className="text-sm font-semibold mb-2 text-[#111212]">转换后 (60x60 PNG)</h2>
               <Image
                 src={convertedImage}
@@ -128,6 +128,21 @@ export default function Home() {
                 height={200}
                 className="border rounded"
               />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity rounded" />
+              <button
+                onClick={() => {
+                  const link = document.createElement('a');
+                  const originalName = fileInputRef.current?.files?.[0]?.name.split('.')[0] || 'image';
+                  link.href = convertedImage;
+                  link.download = `${originalName}_60x60.png`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <span className="btn cursor-pointer">下载</span>
+              </button>
             </div>
           )}
         </div>
