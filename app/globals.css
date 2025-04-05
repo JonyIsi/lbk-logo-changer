@@ -3,8 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-sans: "HarmonyOS Sans", "PingFang TC", -apple-system, system-ui, "Helvetica Neue", "Microsoft YaHei", Arial, sans-serif;
+  --font-sans: "HarmonyOS Sans", "PingFang SC", -apple-system, system-ui, "Helvetica Neue", "Microsoft YaHei", Arial, sans-serif;
   --font-mono: "HarmonyOS Sans Mono", monospace;
+  --button-bg: #111212;
+  --button-hover: #242529;
 }
 
 body {
@@ -12,3 +14,23 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+.btn {
+  @apply px-6 py-3 text-white rounded-full transition-colors cursor-pointer flex items-center justify-center gap-2 mx-auto;
+  background-color: var(--button-bg);
+}
+
+.btn:hover {
+  background-color: var(--button-hover);
+}
+
+.btn-full {
+  width: 100%;
+  margin-top: 2rem;
+}
+
+.btn-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+

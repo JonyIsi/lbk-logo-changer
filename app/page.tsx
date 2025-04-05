@@ -1,24 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 export default function Home() {
   const [image, setImage] = useState<string | null>(null);
   const [convertedImage, setConvertedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processImage = useCallback((file: File) => {
     setLoading(true);
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64Image = e.target?.result as string;
       setImage(base64Image);
 
-      // Create a canvas to resize the image
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -31,51 +29,85 @@ export default function Home() {
         canvas.height = 60;
         ctx.drawImage(img, 0, 0, 60, 60);
         
-        // Convert to PNG
         const pngData = canvas.toDataURL('image/png');
         setConvertedImage(pngData);
+        
+        // 自动下载处理后的图片
+        const link = document.createElement('a');
+        const originalName = file.name.split('.')[0];
+        link.href = pngData;
+        link.download = `${originalName}_60x60.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
         setLoading(false);
       };
     };
     reader.readAsDataURL(file);
+  }, []);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processImage(file);
   };
 
-  const handleDownload = () => {
-    if (!convertedImage) return;
-    
-    const link = document.createElement('a');
-    link.href = convertedImage;
-    link.download = 'converted-image.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) processImage(file);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) processImage(file);
+        break;
+      }
+    }
   };
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-md mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Image Converter</h1>
+    <main 
+      className="min-h-screen p-8 bg-white"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onPaste={handlePaste}
+    >
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-[#111212]">Logo Changer</h1>
         
-        <div className="mb-4">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4 text-center">
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
-            className="block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-full file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
+            className="hidden"
           />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn"
+          >
+            <PlusIcon className="btn-icon" />
+            选择图片
+          </button>
+          <p className="mt-4 text-[#111212]">或者拖放一个文件/粘贴图片，上传完毕将自动下载</p>
+          <p className="text-sm text-gray-400 mt-2">支持 JPG、PNG、GIF、WebP 等格式</p>
         </div>
 
-        {loading && <p className="text-gray-500">Converting image...</p>}
+        {loading && <p className="text-gray-500 text-center">正在处理图片...</p>}
 
-        <div className="grid grid-cols-2 gap-4 mt-6">
+        <div className="grid grid-cols-2 gap-8 mt-8">
           {image && (
             <div>
-              <h2 className="text-sm font-semibold mb-2">Original</h2>
+              <h2 className="text-sm font-semibold mb-2 text-[#111212]">原图</h2>
               <Image
                 src={image}
                 alt="Original"
@@ -88,7 +120,7 @@ export default function Home() {
           
           {convertedImage && (
             <div>
-              <h2 className="text-sm font-semibold mb-2">Converted (60x60 PNG)</h2>
+              <h2 className="text-sm font-semibold mb-2 text-[#111212]">转换后 (60x60 PNG)</h2>
               <Image
                 src={convertedImage}
                 alt="Converted"
@@ -99,15 +131,6 @@ export default function Home() {
             </div>
           )}
         </div>
-
-        {convertedImage && (
-          <button
-            onClick={handleDownload}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Download PNG
-          </button>
-        )}
       </div>
     </main>
   );
